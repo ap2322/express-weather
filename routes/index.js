@@ -8,8 +8,9 @@ router.get('/', function(req, res, next) {
 
 /* GET something else. */
 router.get('/thing', function(req, res, next) {
-  let key = process.env.ADMIN_API_KEY
-  res.send(key);
+  // let key = process.env.ADMIN_API_KEY
+  // res.send(key);
+  res.send('testing page')
 });
 
 module.exports = router;
