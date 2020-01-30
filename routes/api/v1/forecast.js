@@ -9,7 +9,6 @@ const fetch = require('node-fetch');
 router.get('/', (request, response) => {
   // -1. Make sure api key sent in request
   const user = request.body;
-  // can also use request.body.api_key to get just the key
 
   for (let requiredParameter of ['api_key']) {
     if (!user[requiredParameter]) {
@@ -26,32 +25,55 @@ router.get('/', (request, response) => {
     .then(user => {
       // authorized request
       console.log("Authorized Request");
+      // check that request has parameter before async function
+      let loc = request.query.location
+      console.log(loc)
+
+      if(loc === undefined){
+        return response
+          .status(422)
+          .send({error: "Missing query parameter location"})
+      } else {
+        return loc;
+      }
     })
-    .then(googleData => {
-      let loc = request.query
-      fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${loc}&key=${process.env.GEOCODING_API}`)
-       .then(res => res.json())
-       .then(json => response.send(json))
-       .catch(err => console.log(`Error: ${err}`))
+    .then(async (loc) => {
+      // 2. Send parameters to geocode serivce to get lat and long
+      fetchGoogle(loc)
+        .then(data => {
+          let latLong = data.results[0].geometry.location;
+          return latLong;
+        })
+        .then(async (latLong) => {
+          // 3. Send lat and long to darksky service to get forecast
+          fetchDarkSky(latLong)
+            .then(forecastData => response.send(forecastData))
+        })
+
+
     })
+
     .catch(error => {
       response.status(500).json({error})
     })
 
-  // 1. get parameters from request
-  let searchLocation = request.query
-  // 2. Send parameters to geocode serivce to get lat and long
-  // 3. Send lat and long to darksky service to get forecast
+
   // 4. format forecast into expected json format
   // 5. return the response.json(forecast)
 
-  // database('papers').select()
-  //   .then((papers) => {
-  //     response.status(200).json(papers);
-  //   })
-  //   .catch((error) => {
-  //     response.status(500).json({ error });
-  //   });
 });
+
+async function fetchGoogle(loc) {
+  let res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${loc}&key=${process.env.GEOCODING_API}`);
+  let googleInfo = await res.json();
+  return googleInfo;
+}
+
+async function fetchDarkSky(data) {
+  let url = `https://api.darksky.net/forecast/${process.env.DARKSKY_API_KEY}/${data.lat},${data.lng}?units=us`
+  let res = await fetch(url);
+  let darkSkyInfo = await res.json();
+  return darkSkyInfo;
+}
 
 module.exports = router;
