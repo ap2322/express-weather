@@ -7,7 +7,7 @@ const database = require('knex')(configuration);
 
 var googleGeo = require('../../../lib/services/googleGeoService');
 
-router.get('/', (request, response) => {
+router.get('/', (request, response, next) => {
   // -1. Make sure api key sent in request
   const user = request.body;
 
@@ -31,13 +31,13 @@ router.get('/', (request, response) => {
       } else {
         // authorized request made!
         let foundUser = users[0];
-        let info = googleGeo.getGoogleData(request.query);
-        console.log(typeof info)
+        // let info = googleGeo.getGoogleData(request.query);
+        let info = googleGeo.fetchAsync();
         // info.then(data => console.log("it worked!"))
         // console.log(typeof foundUser);
         response
         .status(200)
-        .send({success: "Authorized Request", user: foundUser})
+        .send({success: "Authorized Request", user: foundUser, info: info})
       }
     })
     .catch(error => {
