@@ -5,7 +5,7 @@ const environment = process.env.NODE_ENV || 'development';
 const configuration = require('../../../knexfile')[environment];
 const database = require('knex')(configuration);
 
-var googleGeoService = require('../../services/googleGeoService');
+var googleGeo = require('../../../lib/services/googleGeoService');
 
 router.get('/', (request, response) => {
   // 0. Check api_key in body to make sure it's in db
@@ -30,20 +30,17 @@ router.get('/', (request, response) => {
       } else {
         // authorized request made!
         let foundUser = users[0]
-        latLong = googleGeoService(request.query)
-        console.log(latLong)
-        return response
-        .status(200)
-        .send({success: "Authorized Request"})
+        // googleGeo.getGoogleData(request.query));
+        // let info = googleGeo.bye()
+        // return response
+        // .status(200)
+        // .send({success: "Authorized Request"})
       }
     })
+    .then(foundUser => console.log(foundUser))
     .catch(error => {
       response.status(500).json({error})
     })
-    .then(foundUser => console.log(foundUser))
-    // response.send(foundUser)
-
-  // response.send('foundUser')
 
   // 1. get parameters from request
   let searchLocation = request.query
