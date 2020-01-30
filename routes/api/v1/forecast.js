@@ -4,12 +4,12 @@ var router = express.Router();
 const environment = process.env.NODE_ENV || 'development';
 const configuration = require('../../../knexfile')[environment];
 const database = require('knex')(configuration);
+const fetch = require('node-fetch');
 
-var googleGeo = require('../../../lib/services/googleGeoService');
-
-router.get('/', (request, response, next) => {
+router.get('/', (request, response) => {
   // -1. Make sure api key sent in request
   const user = request.body;
+  // can also use request.body.api_key to get just the key
 
   for (let requiredParameter of ['api_key']) {
     if (!user[requiredParameter]) {
@@ -22,23 +22,17 @@ router.get('/', (request, response, next) => {
   database('users')
     .where('api_key', user['api_key'])
     .select()
-    .then(users => {
-      if(users.length === 0) {
-        // no matching api_key in db
-        return response
-        .status(404)
-        .send({error: "Unauthorized Request"});
-      } else {
-        // authorized request made!
-        let foundUser = users[0];
-        // let info = googleGeo.getGoogleData(request.query);
-        let info = googleGeo.fetchAsync();
-        // info.then(data => console.log("it worked!"))
-        // console.log(typeof foundUser);
-        response
-        .status(200)
-        .send({success: "Authorized Request", user: foundUser, info: info})
-      }
+    .first()
+    .then(user => {
+      // authorized request
+      console.log("Authorized Request");
+    })
+    .then(googleData => {
+      let loc = request.query
+      fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${loc}&key=${process.env.GEOCODING_API}`)
+       .then(res => res.json())
+       .then(json => response.send(json))
+       .catch(err => console.log(`Error: ${err}`))
     })
     .catch(error => {
       response.status(500).json({error})
