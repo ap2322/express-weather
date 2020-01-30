@@ -62,20 +62,16 @@ router.get('/', (request, response) => {
               response.send(forecastResponse)
             })
         })
-
-
     })
-
     .catch(error => {
       response.status(500).json({error})
     })
 
-
-
 });
 
 async function fetchGoogle(loc) {
-  let res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${loc}&key=${process.env.GEOCODING_API}`);
+  let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${loc}&key=${process.env.GEOCODING_API}`
+  let res = await fetch(url);
   let googleInfo = await res.json();
   return googleInfo;
 }
@@ -86,26 +82,5 @@ async function fetchDarkSky(data) {
   let darkSkyInfo = await res.json();
   return darkSkyInfo;
 }
-//
-// function formatForecast(info) {
-//   return {
-//     location: info.place,
-//     currently: {
-//       summary: info.data.currently.summary,
-//       icon: info.data.currently.icon,
-//       precipIntensity: info.data.currently.precipIntensity,
-//       precipProbability: info.data.currently.precipProbability,
-//       temperature: info.data.currently.temperature,
-//       humidity: info.data.currently.humidity,
-//       pressure: info.data.currently.pressure,
-//       windSpeed: info.data.currently.windSpeed,
-//       windGust: info.data.currently.windGust,
-//       windBearing: info.data.currently.windBearing,
-//       cloudCover: info.data.currently.cloudCover,
-//       visibility: info.data.currently.visibility,
-//     },
-//     hourly: info.data.hourly,
-//     daily: info.data.daily
-//   }
-// }
+
 module.exports = router;
