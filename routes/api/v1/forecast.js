@@ -5,6 +5,7 @@ const environment = process.env.NODE_ENV || 'development';
 const configuration = require('../../../knexfile')[environment];
 const database = require('knex')(configuration);
 const fetch = require('node-fetch');
+const Forecast = require('../../../lib/formatForecast')
 
 router.get('/', (request, response) => {
   // -1. Make sure api key sent in request
@@ -42,12 +43,23 @@ router.get('/', (request, response) => {
       fetchGoogle(loc)
         .then(data => {
           let latLong = data.results[0].geometry.location;
-          return latLong;
+          let place = data.results[0].formatted_address;
+          return { latLong, place: place };
         })
-        .then(async (latLong) => {
+        .then(async (info) => {
           // 3. Send lat and long to darksky service to get forecast
-          fetchDarkSky(latLong)
-            .then(forecastData => response.send(forecastData))
+          fetchDarkSky(info.latLong)
+            .then(forecastData => {
+              // 4. format forecast into expected json format
+              let forecast = new Forecast({data: forecastData, place: info.place})
+              // 5. return the response.json(forecast)
+              let forecastResponse = {
+                location: forecast.locationInfo,
+                currently: forecast.makeCurrently(),
+                daily: forecast.makeDaily(7)
+              }
+              response.send(forecastResponse)
+            })
         })
 
 
@@ -58,8 +70,6 @@ router.get('/', (request, response) => {
     })
 
 
-  // 4. format forecast into expected json format
-  // 5. return the response.json(forecast)
 
 });
 
@@ -75,5 +85,26 @@ async function fetchDarkSky(data) {
   let darkSkyInfo = await res.json();
   return darkSkyInfo;
 }
-
+//
+// function formatForecast(info) {
+//   return {
+//     location: info.place,
+//     currently: {
+//       summary: info.data.currently.summary,
+//       icon: info.data.currently.icon,
+//       precipIntensity: info.data.currently.precipIntensity,
+//       precipProbability: info.data.currently.precipProbability,
+//       temperature: info.data.currently.temperature,
+//       humidity: info.data.currently.humidity,
+//       pressure: info.data.currently.pressure,
+//       windSpeed: info.data.currently.windSpeed,
+//       windGust: info.data.currently.windGust,
+//       windBearing: info.data.currently.windBearing,
+//       cloudCover: info.data.currently.cloudCover,
+//       visibility: info.data.currently.visibility,
+//     },
+//     hourly: info.data.hourly,
+//     daily: info.data.daily
+//   }
+// }
 module.exports = router;
