@@ -5,7 +5,7 @@ const environment = process.env.NODE_ENV || 'development';
 const configuration = require('../../../knexfile')[environment];
 const database = require('knex')(configuration);
 const fetch = require('node-fetch');
-const Forecast = require('../../../lib/formatForecast')
+const FormatForecast = require('../../../lib/formatForecast')
 
 router.get('/', (request, response) => {
   // -1. Make sure api key sent in request
@@ -51,7 +51,7 @@ router.get('/', (request, response) => {
           fetchDarkSky(info.latLong)
             .then(forecastData => {
               // 4. format forecast into expected json format
-              let forecast = new Forecast({data: forecastData, place: info.place})
+              let forecast = new FormatForecast({data: forecastData, place: info.place})
               // 5. return the response.json(forecast)
               let forecastResponse = {
                 location: forecast.locationInfo,
