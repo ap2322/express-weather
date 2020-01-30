@@ -56,6 +56,7 @@ router.get('/', (request, response) => {
               let forecastResponse = {
                 location: forecast.locationInfo,
                 currently: forecast.makeCurrently(),
+                hourly: forecast.makeHourly(8),
                 daily: forecast.makeDaily(7)
               }
               response.send(forecastResponse)
