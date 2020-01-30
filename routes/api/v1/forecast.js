@@ -5,6 +5,7 @@ const environment = process.env.NODE_ENV || 'development';
 const configuration = require('../../../knexfile')[environment];
 const database = require('knex')(configuration);
 const fetch = require('node-fetch');
+const FormatForecast = require('../../../lib/formatForecast')
 
 router.get('/', (request, response) => {
   // -1. Make sure api key sent in request
@@ -42,29 +43,35 @@ router.get('/', (request, response) => {
       fetchGoogle(loc)
         .then(data => {
           let latLong = data.results[0].geometry.location;
-          return latLong;
+          let place = data.results[0].formatted_address;
+          return { latLong, place: place };
         })
-        .then(async (latLong) => {
+        .then(async (info) => {
           // 3. Send lat and long to darksky service to get forecast
-          fetchDarkSky(latLong)
-            .then(forecastData => response.send(forecastData))
+          fetchDarkSky(info.latLong)
+            .then(forecastData => {
+              // 4. format forecast into expected json format
+              let forecast = new FormatForecast({data: forecastData, place: info.place})
+              // 5. return the response.json(forecast)
+              let forecastResponse = {
+                location: forecast.locationInfo,
+                currently: forecast.makeCurrently(),
+                hourly: forecast.makeHourly(8),
+                daily: forecast.makeDaily(7)
+              }
+              response.send(forecastResponse)
+            })
         })
-
-
     })
-
     .catch(error => {
       response.status(500).json({error})
     })
 
-
-  // 4. format forecast into expected json format
-  // 5. return the response.json(forecast)
-
 });
 
 async function fetchGoogle(loc) {
-  let res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${loc}&key=${process.env.GEOCODING_API}`);
+  let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${loc}&key=${process.env.GEOCODING_API}`
+  let res = await fetch(url);
   let googleInfo = await res.json();
   return googleInfo;
 }
