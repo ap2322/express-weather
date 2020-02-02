@@ -4,12 +4,12 @@ var router = express.Router();
 const environment = process.env.NODE_ENV || 'development';
 const configuration = require('../../../knexfile')[environment];
 const database = require('knex')(configuration);
+const fetch = require('node-fetch');
+
 
 router.post('/', (request, response) => {
   // 1. check request body comes with location and api_key
-
   const info = request.body;
-  console.log(info);
 
   for (let requiredParameter of ['location', 'api_key']) {
     if (!info[requiredParameter]) {
@@ -37,7 +37,7 @@ router.post('/', (request, response) => {
       database('favorites').insert({location: info['location'],
                                     user_id: user.id}, 'id')
       .then(async(favorite) => {
-        addLatLong(favorite)
+        addLatLong(favorite, info['location'])
           .then(data => {
             response.send(data);
           })
@@ -52,23 +52,22 @@ router.post('/', (request, response) => {
 });
 
 // 4. look up lat and long of favorite to add update row in table
-async function addLatLong(fav) {
-  let fav_id = fav[0]
+async function addLatLong(fav, location) {
+  let fav_id = fav[0];
+  let googleInfo = await fetchGoogle(location);
+  let latLong = await googleInfo.results[0].geometry.location;
   let updated = await database('favorites')
     .where({id: fav_id})
-    .update({latitude: 4322.22, longitude: 3333.33}, ['id', 'latitude', 'longitude'])
-
+    .update({latitude: latLong.lat, longitude: latLong.lng}, ['id', 'latitude', 'longitude'])
   console.log(updated);
   return updated;
 }
 
-// console.log(favorite, favorite[0]);
-// database('favorites')
-//   .where({ id: favorite[0] })
-//   .update({ latitude: 100.00}, ['id', 'latitude'])
-// })
-// .then(info => {
-// response.send(info)
-// })
+async function fetchGoogle(loc) {
+  let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${loc}&key=${process.env.GEOCODING_API}`
+  let res = await fetch(url);
+  let googleInfo = await res.json();
+  return googleInfo;
+}
 
 module.exports = router;
