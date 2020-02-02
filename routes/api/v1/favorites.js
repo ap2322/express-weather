@@ -57,6 +57,7 @@ router.get('/', (request, response) => {
               let forecastData = await fetchDarkSky(latLong)
               let forecast = new FormatForecast({data: forecastData, place: fav.location})
 
+              // get/5. response.send([{location, current_weather},{location, current_weather}])
               return {location: fav.location, current_forecast: forecast.makeCurrently()}
             })
           )
@@ -70,8 +71,6 @@ router.get('/', (request, response) => {
     .catch(error => {
       response.status(500).json({error})
     })
-
-  // get/5. response.send([{location, current_weather},{location, current_weather}])
 });
 
 router.post('/', (request, response) => {
