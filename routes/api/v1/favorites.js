@@ -5,7 +5,73 @@ const environment = process.env.NODE_ENV || 'development';
 const configuration = require('../../../knexfile')[environment];
 const database = require('knex')(configuration);
 const fetch = require('node-fetch');
+const FormatForecast = require('../../../lib/formatForecast')
 
+router.get('/', (request, response) => {
+  // get/1. check request body comes with api_key
+  const info = request.body;
+
+  for (let requiredParameter of ['api_key']) {
+    if (!info[requiredParameter]) {
+      return response
+        .status(422)
+        .send({ error: `Expected format: { api_key: <String> }. You're missing a "${requiredParameter}" property.` });
+    }
+  }
+
+  // get/2. check api_key in users and return user
+  database('users')
+    .where('api_key', info['api_key'])
+    .first()
+    .then(user => {
+      if(user) {
+        return user
+      } else {
+        return response
+          .status(401)
+          .json({"message": "Unauthorized request"})
+      }
+    })
+    .then(user => {
+      // get/3. get user's favorites from db
+      database('favorites')
+        .select('location', 'latitude', 'longitude')
+        .where('user_id', user.id)
+        .distinct()
+        .then(favorites =>{
+          if(favorites.length > 0){
+            return favorites
+          } else {
+            return response
+              .status(404)
+              .json({"error":"No favorite locations"})
+          }
+        })
+        // get/4. Promise.all(favorites get forecast for each)
+        .then(favorites => {
+          console.log(favorites)
+          let favForecasts = Promise.all(
+            favorites.map(async (fav) => {
+              let latLong = `${fav.latitude},${fav.longitude}`
+              console.log(latLong)
+              let forecastData = await fetchDarkSky(latLong)
+              let forecast = new FormatForecast({data: forecastData, place: fav.location})
+
+              // get/5. response.send([{location, current_weather},{location, current_weather}])
+              return {location: fav.location, current_forecast: forecast.makeCurrently()}
+            })
+          )
+          .then(favForecasts => {
+            console.log(favForecasts)
+            return response.send(favForecasts)
+          })
+
+        })
+    })
+    .catch(error => {
+      response.status(500).json({error})
+    })
+});
 
 router.post('/', (request, response) => {
   // 1. check request body comes with location and api_key
@@ -78,6 +144,13 @@ async function fetchGoogle(loc) {
   let res = await fetch(url);
   let googleInfo = await res.json();
   return googleInfo;
+}
+
+async function fetchDarkSky(latLong) {
+  let url = `https://api.darksky.net/forecast/${process.env.DARKSKY_API_KEY}/${latLong}?units=us`
+  let res = await fetch(url);
+  let darkSkyInfo = await res.json();
+  return darkSkyInfo;
 }
 
 module.exports = router;
