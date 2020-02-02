@@ -39,7 +39,20 @@ router.post('/', (request, response) => {
       .then(async(favorite) => {
         addLatLong(favorite, info['location'])
           .then(data => {
-            response.send(data);
+            if(data === undefined){
+              // no latLong found
+              console.log(favorite[0], info['location'])
+              database('favorites')
+                .where({ id: favorite[0] })
+                .del()
+                .then(()=>{
+                  return response.status(404).send("Location not found on Google Maps, please enter a different location")
+                })
+            } else {
+              return response
+              .status(200)
+              .json({"message": `${info['location']} has been added to your favorites`});
+            }
           })
       })
     })
