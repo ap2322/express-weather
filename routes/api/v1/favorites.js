@@ -56,12 +56,10 @@ router.post('/', (request, response) => {
           })
       })
     })
-
-
-    // Returns [ { id: 42, title: "The Hitchhiker's Guide to the Galaxy" } ]
-
-  // 5. .catch error handling
-
+  // 5. catch error handling
+  .catch(error => {
+    response.status(500).json({error})
+  })
 });
 
 // 4. look up lat and long of favorite to add update row in table
