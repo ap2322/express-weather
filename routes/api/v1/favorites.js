@@ -6,6 +6,51 @@ const configuration = require('../../../knexfile')[environment];
 const database = require('knex')(configuration);
 const fetch = require('node-fetch');
 
+router.get('/', (request, response) => {
+  // get/1. check request body comes with api_key
+  const info = request.body;
+
+  for (let requiredParameter of ['api_key']) {
+    if (!info[requiredParameter]) {
+      return response
+        .status(422)
+        .send({ error: `Expected format: { api_key: <String> }. You're missing a "${requiredParameter}" property.` });
+    }
+  }
+
+  // get/2. check api_key in users and return user
+  database('users')
+    .where('api_key', info['api_key'])
+    .first()
+    .then(user => {
+      if(user) {
+        return user
+      } else {
+        return response
+          .status(401)
+          .json({"message": "Unauthorized request"})
+      }
+    })
+    .then(user => {
+      // get/3. get user's favorites from db
+      database('favorites')
+        .select('location')
+        .where('user_id', user.id)
+        .distinct()
+        .then(favorites =>{
+          if(favorites.length > 0){
+            response.send(favorites)
+          } else {
+            return response
+              .status(404)
+              .json({"error":"No favorite locations"})
+          }
+        })
+    })
+
+  // get/4. Promise.all(favorites get forecast for each)
+  // get/5. response.send([{location, current_weather},{location, current_weather}])
+});
 
 router.post('/', (request, response) => {
   // 1. check request body comes with location and api_key
