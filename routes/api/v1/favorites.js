@@ -47,13 +47,13 @@ router.get('/', (request, response) => {
           }
         })
         // get/4. Promise.all(favorites get forecast for each)
-        .then(async (favorites) => {
+        .then(favorites => {
           console.log(favorites)
           let favForecasts = Promise.all(
-            favorites.map(fav => {
+            favorites.map(async (fav) => {
               let latLong = `${fav.latitude},${fav.longitude}`
               console.log(latLong)
-              let allForecastData = fetchDarkSky(latLong)
+              let allForecastData = await fetchDarkSky(latLong)
               return {location: fav.location, current_forecast: allForecastData}
             })
           )
