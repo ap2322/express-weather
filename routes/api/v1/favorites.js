@@ -34,34 +34,41 @@ router.post('/', (request, response) => {
     })
     .then(user => {
       // 3. add favorite with user reference
-      database('favorites').insert({location: info['location'], user_id: user.id}, 'id')
-      .then(favorite => {
-        response.json(favorite)
+      database('favorites').insert({location: info['location'],
+                                    user_id: user.id}, 'id')
+      .then(async(favorite) => {
+        addLatLong(favorite)
+          .then(data => {
+            response.send(data);
+          })
       })
     })
-  // 4. look up lat and long of favorite to add update row in table
+
+
+    // Returns [ { id: 42, title: "The Hitchhiker's Guide to the Galaxy" } ]
+
   // 5. .catch error handling
 
-  // // find paper_id in papers db and return error if not found
-  // database('papers')
-  //   .where('id', footnote['paper_id'])
-  //   .select()
-  //   .then(papers => {
-  //     if(papers.length === 0) {
-  //       return response
-  //       .status(404)
-  //       .send({ error: `Could not find paper with id ${footnote['paper_id']}` });
-  //     } else {
-  //       // if paper is found in db, insert footnote into footnotes db
-  //       database('footnotes').insert(footnote, 'id')
-  //       .then(footnote => {
-  //         response.status(201).json({id: footnote[0]});
-  //       })
-  //       .catch(error => {
-  //         response.status(500).json({ error });
-  //       });
-  //     }
-  //   })
 });
+
+// 4. look up lat and long of favorite to add update row in table
+async function addLatLong(fav) {
+  let fav_id = fav[0]
+  let updated = await database('favorites')
+    .where({id: fav_id})
+    .update({latitude: 4322.22, longitude: 3333.33}, ['id', 'latitude', 'longitude'])
+
+  console.log(updated);
+  return updated;
+}
+
+// console.log(favorite, favorite[0]);
+// database('favorites')
+//   .where({ id: favorite[0] })
+//   .update({ latitude: 100.00}, ['id', 'latitude'])
+// })
+// .then(info => {
+// response.send(info)
+// })
 
 module.exports = router;
