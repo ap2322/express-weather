@@ -5,6 +5,7 @@ const environment = process.env.NODE_ENV || 'development';
 const configuration = require('../../../knexfile')[environment];
 const database = require('knex')(configuration);
 const fetch = require('node-fetch');
+const FormatForecast = require('../../../lib/formatForecast')
 
 router.get('/', (request, response) => {
   // get/1. check request body comes with api_key
@@ -53,8 +54,10 @@ router.get('/', (request, response) => {
             favorites.map(async (fav) => {
               let latLong = `${fav.latitude},${fav.longitude}`
               console.log(latLong)
-              let allForecastData = await fetchDarkSky(latLong)
-              return {location: fav.location, current_forecast: allForecastData}
+              let forecastData = await fetchDarkSky(latLong)
+              let forecast = new FormatForecast({data: forecastData, place: fav.location})
+
+              return {location: fav.location, current_forecast: forecast.makeCurrently()}
             })
           )
           .then(favForecasts => {
