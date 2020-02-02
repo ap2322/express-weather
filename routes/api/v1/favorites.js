@@ -66,12 +66,13 @@ router.post('/', (request, response) => {
 async function addLatLong(fav, location) {
   let fav_id = fav[0];
   let googleInfo = await fetchGoogle(location);
-  let latLong = await googleInfo.results[0].geometry.location;
-  let updated = await database('favorites')
+  if(googleInfo.results.length > 0){
+    let latLong = await googleInfo.results[0].geometry.location;
+    let updated = await database('favorites')
     .where({id: fav_id})
     .update({latitude: latLong.lat, longitude: latLong.lng}, ['id', 'latitude', 'longitude'])
-  console.log(updated);
-  return updated;
+    return updated;
+  }
 }
 
 async function fetchGoogle(loc) {
