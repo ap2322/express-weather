@@ -34,21 +34,40 @@ router.get('/', (request, response) => {
     .then(user => {
       // get/3. get user's favorites from db
       database('favorites')
-        .select('location')
+        .select('location', 'latitude', 'longitude')
         .where('user_id', user.id)
         .distinct()
         .then(favorites =>{
           if(favorites.length > 0){
-            response.send(favorites)
+            return favorites
           } else {
             return response
               .status(404)
               .json({"error":"No favorite locations"})
           }
         })
+        // get/4. Promise.all(favorites get forecast for each)
+        .then(async (favorites) => {
+          console.log(favorites)
+          let favForecasts = Promise.all(
+            favorites.map(fav => {
+              let latLong = `${fav.latitude},${fav.longitude}`
+              console.log(latLong)
+              let allForecastData = fetchDarkSky(latLong)
+              return {location: fav.location, current_forecast: allForecastData}
+            })
+          )
+          .then(favForecasts => {
+            console.log(favForecasts)
+            return response.send(favForecasts)
+          })
+
+        })
+    })
+    .catch(error => {
+      response.status(500).json({error})
     })
 
-  // get/4. Promise.all(favorites get forecast for each)
   // get/5. response.send([{location, current_weather},{location, current_weather}])
 });
 
@@ -123,6 +142,13 @@ async function fetchGoogle(loc) {
   let res = await fetch(url);
   let googleInfo = await res.json();
   return googleInfo;
+}
+
+async function fetchDarkSky(latLong) {
+  let url = `https://api.darksky.net/forecast/${process.env.DARKSKY_API_KEY}/${latLong}?units=us`
+  let res = await fetch(url);
+  let darkSkyInfo = await res.json();
+  return darkSkyInfo;
 }
 
 module.exports = router;
