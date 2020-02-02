@@ -21,7 +21,6 @@ router.post('/', (request, response) => {
   // 2. check api_key in users and return user
   database('users')
     .where('api_key', info['api_key'])
-    .select()
     .first()
     .then(user => {
       if(user) {
@@ -41,7 +40,6 @@ router.post('/', (request, response) => {
           .then(data => {
             if(data === undefined){
               // no latLong found
-              console.log(favorite[0], info['location'])
               database('favorites')
                 .where({ id: favorite[0] })
                 .del()
