@@ -16,7 +16,9 @@ https://express-weather-ap.herokuapp.com
 
 </hr>
 # Weather Endpoints
-All endpoints require a valid api_key sent through the body of the request in an `x-www-form-urlencoded` format.
+All endpoints require a valid api_key sent through the body of the request in an `x-www-form-urlencoded` format. Current version is `/api/v1/`. All endpoint requests use `Content-Type: application/json` and `Accept: application/json`.
+
+Example request: `https://express-weather-ap.herokuapp.com/api/v1/forecast?Denver,CO` would return the current forecast for Denver, CO.
 
 ## Forecast
 `GET /api/v1/forecast?<params>`
@@ -93,11 +95,68 @@ Output Example:
   }
 }
 ```
-----
 
-# All your Express base are belong to us
+## Favorite Locations 
+### Create Favorite
+```
+POST /favorites
+body:
+{
+  "location": <city, state>,
+  "api_key": <user api_key>
+}
+```
+Both `location` and `api_key` are required. 
 
-[![Build Status](https://travis-ci.com/turingschool-examples/all-your-base.svg?branch=master)](https://travis-ci.com/turingschool-examples/all-your-base)
+### List Favorite Locations and their Weather
+```
+GET /api/v1/favorites
+
+body:
+{
+  "api_key": <user api_key>
+}
+```
+Required `api_key` in the body of the request.
+
+Output Example:
+```
+[
+    {
+        "location": "Denver, CO",
+        "current_forecast": {
+            "summary": "Clear",
+            "icon": "clear-day",
+            "precipIntensity": 0,
+            "precipProbability": 0,
+            "temperature": 70.73,
+            "humidity": 0.07,
+            "pressure": 998.2,
+            "windSpeed": 11.69,
+            "windGust": 20.65,
+            "windBearing": 170,
+            "cloudCover": 0,
+            "visibility": 10
+        }
+    }
+ ]
+```
+
+### Delete a Favorite Location
+```
+DELETE /api/v1/favorites
+body:
+{
+  "location": "Denver, CO",
+  "api_key": "jgn983hy48thw9begh98h4539h4"
+}
+```
+Both `location` and `api_key` required in body of request.
+
+
+<hr>
+
+# Local use and setup
 
 ## Getting started
 To use this repo, you’ll need to `fork` the repo as your own. Once you have done that, you’ll need to run the following command below to get everything up and running. 
@@ -144,13 +203,9 @@ knex migrate:latest --env test
 ## Running your tests
 Running tests are simple and require you to run the following command below: 
 
-`npm test`
-
-When the tests have completed, you’ll get a read out of how things panned out. The tests will be a bit more noisy than what you’re used to, so be prepared. 
+`npm test` 
 
 ## Setting up your production environment
-This repo comes with a lot of things prepared for you. This includes production ready configuration. To get started, you’ll need to do a few things. 
-
 - Start a brand new app on the Heroku dashboard 
 - Add a Postgres instance to your new Heroku app
 - Find the URL of that same Postgres instance and copy it. It should look like a long url. It may look something like like `postgres://sdflkjsdflksdf:9d3367042c8739f3...`.
