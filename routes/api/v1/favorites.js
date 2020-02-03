@@ -151,17 +151,16 @@ router.delete('/', (request, response) => {
       }
     })
     .then(user => {
-      database('favorites')
+      return database('favorites')
+      // del/3. find user favorite by location and user_id
         .where({user_id: user.id, location: info['location'] })
+        // del/4. delete found location from db
         .delete()
     })
-    .then(() =>{
-      console.log(fav)
-    })
-    // del/3. find user favorite by location
-    // del/4. delete found location from db
     // del/5. return status 204 if successful
-    // del/6. if no location found, return 404 error message, no location found
+    .then(() =>{
+      return response.status(204).send("Deleted")
+    })
     // del/?. catch error handling
     .catch(error => {
       response.status(500).json({error})
