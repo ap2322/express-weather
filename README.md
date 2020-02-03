@@ -15,6 +15,7 @@ https://express-weather-ap.herokuapp.com
 * [DarkSky API](http://darksky.net/dev)
 
 </hr>
+
 # Weather Endpoints
 All endpoints require a valid api_key sent through the body of the request in an `x-www-form-urlencoded` format. Current version is `/api/v1/`. All endpoint requests use `Content-Type: application/json` and `Accept: application/json`.
 
@@ -147,8 +148,8 @@ Output Example:
 DELETE /api/v1/favorites
 body:
 {
-  "location": "Denver, CO",
-  "api_key": "jgn983hy48thw9begh98h4539h4"
+  "location": <city, state>,
+  "api_key": <api key>
 }
 ```
 Both `location` and `api_key` required in body of request.
