@@ -23,29 +23,36 @@ describe('Test the city forecast path', () => {
   });
 
   describe('test forecast GET', () => {
-    it.skip('happy path', async () => {
-
-      var request = require('request');
-      request('/api/v1/forecast?location=denver,co', function (error, response, body) {
-        console.log('error:', error); // Print the error if one occurred
-        console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-        console.log('body:', body); // Print the HTML for the Google homepage.
-      });
+    it('happy path', async () => {
 
       const res = await request(app)
-        .get("/api/v1/forecast?location=denver,co");
+        .get("/api/v1/forecast?location=denver,co")
+        .send({"api_key": "anything-you-like"})
+
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.length).toBe(1);
 
-      expect(res.body[0]).toHaveProperty('title');
-      expect(res.body[0].title).toBe('Alternate Endings for Game of Thrones, Season 8');
+      expect(res.body).toHaveProperty('location');
+      expect(res.body).toHaveProperty('currently');
+      expect(res.body).toHaveProperty('hourly');
+      expect(res.body).toHaveProperty('daily');
+    });
 
-      expect(res.body[0]).toHaveProperty('author');
-      expect(res.body[0].author).toBe('Literally Anyone');
+    it('sad path', async () => {
+      const res = await request(app)
+        .get("/api/v1/forecast")
+        .send({"api_key": "anything-you-like"})
 
-      expect(res.body[0]).toHaveProperty('publisher');
-      expect(res.body[0].publisher).toBe('Not George R. R. Martin');
+      expect(res.statusCode).toBe(422);
+      expect(res.body).toHaveProperty('error');
+    });
+
+    it('sad path, no api_key', async () => {
+      const res = await request(app)
+        .get("/api/v1/forecast?location=denver,co")
+
+      expect(res.statusCode).toBe(422);
+      expect(res.body.error).toBe("Expected format: { api_key: <String> }. You're missing a \"api_key\" property.")
     });
   });
 });
