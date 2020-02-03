@@ -126,6 +126,47 @@ router.post('/', (request, response) => {
   })
 });
 
+router.delete('/', (request, response) => {
+  // del/1. check request body comes with location and api_key
+  const info = request.body;
+
+  for (let requiredParameter of ['location', 'api_key']) {
+    if (!info[requiredParameter]) {
+      return response
+        .status(422)
+        .send({ error: `Expected format: { location: <String>, api_key: <String> }. You're missing a "${requiredParameter}" property.` });
+    }
+  }
+  // del/2. check api_key in users and return user
+  database('users')
+    .where('api_key', info['api_key'])
+    .first()
+    .then(user => {
+      if(user) {
+        return user
+      } else {
+        return response
+          .status(401)
+          .json({"message": "Unauthorized request"})
+      }
+    })
+    .then(user => {
+      return database('favorites')
+      // del/3. find user favorite by location and user_id
+        .where({user_id: user.id, location: info['location'] })
+        // del/4. delete found location from db
+        .delete()
+    })
+    // del/5. return status 204 if successful
+    .then(() =>{
+      return response.status(204).send("Deleted")
+    })
+    // del/?. catch error handling
+    .catch(error => {
+      response.status(500).json({error})
+    })
+});
+
 // 4. look up lat and long of favorite to add update row in table
 async function addLatLong(fav, location) {
   let fav_id = fav[0];
