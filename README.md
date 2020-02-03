@@ -199,6 +199,12 @@ CREATE DATABASE DATABASE_NAME_test;
 
 knex migrate:latest --env test
 ```
+## Environment Variables
+Include the following environment varibles with your own api keys from Google Geocoding API and DarkSky API in your local `.env` file or in your config variables in production:
+```
+GEOCODING_API
+DARKSKY_API_KEY
+```
 
 ## Running your tests
 Running tests are simple and require you to run the following command below: 
